@@ -1,6 +1,7 @@
 package com.example.quanliPT.controller.integration;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,7 +20,8 @@ import java.util.UUID;
 public class UploadController {
 
     // ✅ Đường dẫn tương đối so với thư mục chạy ứng dụng
-    private final String UPLOAD_DIR = "uploads/";
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDir;
 
     @PostMapping("/upload")
     @PreAuthorize("hasRole('ADMIN')")
@@ -51,7 +53,7 @@ public class UploadController {
             String newFileName = UUID.randomUUID().toString() + extension;
 
             // Tạo thư mục uploads nếu chưa có
-            Path uploadPath = Paths.get(UPLOAD_DIR).toAbsolutePath();
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath();
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
                 System.out.println("📁 [Upload] Đã tạo thư mục: " + uploadPath);

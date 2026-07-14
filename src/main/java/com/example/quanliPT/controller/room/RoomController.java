@@ -19,6 +19,7 @@ import com.example.quanliPT.repository.contract.ContractRepository;
 import com.example.quanliPT.model.Contract;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
@@ -33,8 +34,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -46,9 +49,11 @@ public class RoomController {
     private final RoomRepository roomRepository;
     private final ContractRepository contractRepository;
     private final RoomService roomService;
+    private final RentalServiceRepository rentalServiceRepository;
 
 
-    private final String UPLOAD_DIR = "uploads/";
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDir;
 
     @GetMapping
 
@@ -116,6 +121,7 @@ public class RoomController {
             @RequestParam("price") String priceStr,
             @RequestParam("area") String areaStr,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "serviceIds", required = false) List<Long> serviceIds,
             @RequestParam(value = "image", required = false) MultipartFile imageFile
     ) {
         log.info("Entering createRoom with roomNumber={}, type={}", roomNumber, type);
@@ -165,6 +171,7 @@ public class RoomController {
                     .description(description)
                     .image(imageName)
                     .status(RoomStatus.AVAILABLE)
+                    .services(loadSelectedServices(serviceIds))
                     .build();
 
             Room savedRoom = roomRepository.save(room);
@@ -188,6 +195,7 @@ public class RoomController {
             @RequestParam("area") String areaStr,
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "serviceIds", required = false) List<Long> serviceIds,
             @RequestParam(value = "image", required = false) MultipartFile imageFile
     ) {
         log.info("Entering updateRoom with id={}, roomNumber={}", id, roomNumber);
@@ -207,6 +215,7 @@ public class RoomController {
             room.setRoomNumber(roomNumber);
             room.setType(type);
             room.setDescription(description);
+            room.setServices(loadSelectedServices(serviceIds));
 
             if (status != null && !status.isEmpty()) {
                 try {
@@ -311,7 +320,7 @@ public class RoomController {
                 : "";
         String fileName = UUID.randomUUID().toString() + ext;
 
-        Path uploadPath = Paths.get(UPLOAD_DIR).toAbsolutePath();
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath();
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
             log.debug("Upload directory created: {}", uploadPath);
@@ -320,6 +329,13 @@ public class RoomController {
         imageFile.transferTo(uploadPath.resolve(fileName).toFile());
         log.info("Image saved: {}", fileName);
         return fileName;
+    }
+
+    private Set<RentalService> loadSelectedServices(List<Long> serviceIds) {
+        if (serviceIds == null || serviceIds.isEmpty()) {
+            return new HashSet<>();
+        }
+        return new HashSet<>(rentalServiceRepository.findAllById(serviceIds));
     }
 }
 

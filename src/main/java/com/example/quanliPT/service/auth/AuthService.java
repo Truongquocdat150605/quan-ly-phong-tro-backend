@@ -72,6 +72,7 @@ public class AuthService {
         log.info("User registered successfully, token generated for username={}", user.getUsername());
 
         return AuthResponse.builder()
+                .id(user.getId())
                 .token(token)
                 .username(user.getUsername())
                 .fullName(user.getFullName())
@@ -105,6 +106,7 @@ public class AuthService {
         log.info("Login successful for username={}, token generated", user.getUsername());
 
         return AuthResponse.builder()
+                .id(user.getId())
                 .token(token)
                 .username(user.getUsername())
                 .fullName(user.getFullName())

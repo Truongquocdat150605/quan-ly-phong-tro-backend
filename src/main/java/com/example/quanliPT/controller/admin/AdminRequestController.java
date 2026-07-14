@@ -114,7 +114,8 @@ public class AdminRequestController {
                 startDate,
                 endDate,
                 rentPrice,
-                deposit
+                deposit,
+                request.getUserId()
         );
 
         // Trạng thái phòng đã được cập nhật trong contractBusinessService.createContractAndTenant()

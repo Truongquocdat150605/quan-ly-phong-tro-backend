@@ -22,5 +22,6 @@ public class PublicRentalRequestDto {
     private String identityNumber;
     private LocalDate desiredMoveInDate;
     private String note;
+    private Long userId;
 }
 

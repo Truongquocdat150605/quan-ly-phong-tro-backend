@@ -4,8 +4,10 @@ import com.example.quanliPT.dto.auth.ChangePasswordRequest;
 import com.example.quanliPT.model.enums.ContractStatus;
 import com.example.quanliPT.model.Room;
 import com.example.quanliPT.model.User;
+import com.example.quanliPT.model.RentalRequest;
 import com.example.quanliPT.repository.contract.ContractRepository;
 import com.example.quanliPT.repository.user.UserRepository;
+import com.example.quanliPT.repository.guest.RentalRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +26,7 @@ public class TenantController {
     private final UserRepository userRepository;
     private final ContractRepository contractRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RentalRequestRepository rentalRequestRepository;
 
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentTenant(Authentication authentication) {
@@ -42,6 +45,16 @@ public class TenantController {
                 .distinct()
                 .toList();
         return ResponseEntity.ok(rooms);
+    }
+
+    @GetMapping("/my-rental-requests")
+    public ResponseEntity<List<RentalRequest>> getMyRentalRequests(Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.getPhone() == null || user.getPhone().isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(rentalRequestRepository.findByPhone(user.getPhone()));
     }
 
     @PutMapping("/profile")
@@ -78,6 +91,3 @@ public class TenantController {
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
 }
-
-
-

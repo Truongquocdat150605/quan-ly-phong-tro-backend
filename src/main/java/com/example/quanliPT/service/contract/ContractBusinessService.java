@@ -59,7 +59,8 @@ public class ContractBusinessService {
             LocalDate startDate,
             LocalDate endDate,
             BigDecimal rentPrice,
-            BigDecimal deposit) {
+            BigDecimal deposit,
+            Long optionalUserId) {
 
         log.info("Starting createContractAndTenant for roomId={}, tenantPhone={}", roomId, tenantPhone);
 
@@ -73,33 +74,66 @@ public class ContractBusinessService {
         log.debug("Found room: id={}, status={}", room.getId(), room.getStatus());
 
         // 2. Tìm hoặc tạo User
-        String loginIdentifier = tenantPhone;
-        log.debug("Looking up user by phone={}", loginIdentifier);
-        java.util.List<User> usersByPhone = userRepository.findByPhone(loginIdentifier);
-
-        User tenant;
+        User tenant = null;
         boolean isNewUser = false;
-        if (!usersByPhone.isEmpty()) {
-            tenant = usersByPhone.get(0); // Lấy user đầu tiên nếu có nhiều
-            log.debug("Existing user found: id={}, username={}", tenant.getId(), tenant.getUsername());
-            // KHÔNG GHI ĐÈ thông tin cũ (Email, CCCD, Tên) bằng thông tin mới từ form.
-            // Tránh trường hợp nhập nhầm SĐT làm sai lệch dữ liệu của người khác.
-            // Khách có thể tự cập nhật Profile của mình trong trang cá nhân sau.
+        
+        if (optionalUserId != null) {
+            tenant = userRepository.findById(optionalUserId).orElse(null);
+            log.debug("Looked up user by optionalUserId={}: found={}", optionalUserId, tenant != null);
+        }
+
+        if (tenant == null && tenantEmail != null && !tenantEmail.isBlank()) {
+            tenant = userRepository.findByEmail(tenantEmail).orElse(null);
+            log.debug("Looked up user by email={}: found={}", tenantEmail, tenant != null);
+        }
+
+        if (tenant == null) {
+            String loginIdentifier = tenantPhone;
+            log.debug("Looking up user by phone={}", loginIdentifier);
+            java.util.List<User> usersByPhone = userRepository.findByPhone(loginIdentifier);
+
+            if (!usersByPhone.isEmpty()) {
+                tenant = usersByPhone.get(0); // Lấy user đầu tiên nếu có nhiều
+                log.debug("Existing user found: id={}, username={}", tenant.getId(), tenant.getUsername());
+            } else {
+                isNewUser = true;
+                log.debug("No existing user found, creating new tenant");
+                tenant = User.builder()
+                        .username(tenantPhone)
+                        .email(tenantEmail != null ? tenantEmail : tenantPhone + "@example.com")
+                        .fullName(tenantFullName)
+                        .phone(tenantPhone)
+                        .identityNumber(tenantIdentity)
+                        .password(passwordEncoder.encode("123456"))
+                        .role(Role.TENANT)
+                        .active(true)
+                        .build();
+                tenant = userRepository.save(tenant);
+                log.info("Created new tenant id={}, username={}", tenant.getId(), tenant.getUsername());
+            }
         } else {
-            isNewUser = true;
-            log.debug("No existing user found, creating new tenant");
-            tenant = User.builder()
-                    .username(tenantPhone)
-                    .email(tenantEmail != null ? tenantEmail : tenantPhone + "@example.com")
-                    .fullName(tenantFullName)
-                    .phone(tenantPhone)
-                    .identityNumber(tenantIdentity)
-                    .password(passwordEncoder.encode("123456"))
-                    .role(Role.TENANT)
-                    .active(true)
-                    .build();
-            tenant = userRepository.save(tenant);
-            log.info("Created new tenant id={}, username={}", tenant.getId(), tenant.getUsername());
+            // Update tenant's missing info
+            boolean updated = false;
+            if ((tenant.getFullName() == null || tenant.getFullName().isEmpty()) && tenantFullName != null && !tenantFullName.isBlank()) {
+                tenant.setFullName(tenantFullName);
+                updated = true;
+            }
+            if (tenant.getPhone() == null || tenant.getPhone().isEmpty()) {
+                tenant.setPhone(tenantPhone);
+                updated = true;
+            }
+            if ((tenant.getEmail() == null || tenant.getEmail().isEmpty() || tenant.getEmail().endsWith("@example.com"))
+                    && tenantEmail != null && !tenantEmail.isBlank()) {
+                tenant.setEmail(tenantEmail);
+                updated = true;
+            }
+            if (tenant.getIdentityNumber() == null || tenant.getIdentityNumber().isEmpty()) {
+                tenant.setIdentityNumber(tenantIdentity);
+                updated = true;
+            }
+            if (updated) {
+                userRepository.save(tenant);
+            }
         }
 
         // 3. Tạo hợp đồng
@@ -138,19 +172,9 @@ public class ContractBusinessService {
             log.debug("Sending welcome/approval email to {}", tenant.getEmail());
             try {
                 if (isNewUser) {
-                    emailService.sendWelcomeEmail(
-                            tenant.getEmail(),
-                            tenant.getFullName(),
-                            room.getRoomNumber(),
-                            tenant.getPhone(),
-                            "123456" // Mật khẩu mặc định lúc tạo mới
-                    );
+                    emailService.sendWelcomeEmail(contract, "123456");
                 } else {
-                    emailService.sendExistingUserContractEmail(
-                            tenant.getEmail(),
-                            tenant.getFullName(),
-                            room.getRoomNumber()
-                    );
+                    emailService.sendExistingUserContractEmail(contract);
                 }
             } catch (Exception e) {
                 log.error("Failed to send welcome email to {}: {}", tenant.getEmail(), e.getMessage());
@@ -161,9 +185,3 @@ public class ContractBusinessService {
         return contract;
     }
 }
-
-
-
-
-
-

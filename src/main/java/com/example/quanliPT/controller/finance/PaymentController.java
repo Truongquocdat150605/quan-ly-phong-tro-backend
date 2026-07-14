@@ -56,6 +56,7 @@ public class PaymentController {
     private final InvoiceRepository invoiceRepository;
     private final PaymentTransactionRepository paymentRepository;
     private final UserRepository userRepository;
+    private final com.example.quanliPT.service.notification.EmailService emailService;
 
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
@@ -69,6 +70,38 @@ public class PaymentController {
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeSecretKey;
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private boolean canAccessInvoice(Invoice invoice, Authentication authentication) {
+        if (isAdmin(authentication)) {
+            return true;
+        }
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return invoice != null && invoice.getContract() != null && invoice.getContract().getTenant() != null
+                && invoice.getContract().getTenant().getId().equals(user.getId());
+    }
+
+    private void cancelPendingPayments(Long invoiceId, PaymentMethod exceptMethod) {
+        List<PaymentTransaction> existingTxs = paymentRepository.findByInvoiceId(invoiceId);
+        for (PaymentTransaction existingTx : existingTxs) {
+            if (existingTx.getStatus() == PaymentStatus.PENDING && existingTx.getMethod() != exceptMethod) {
+                existingTx.setStatus(PaymentStatus.CANCELLED);
+                paymentRepository.save(existingTx);
+            }
+        }
+    }
+
+    private PaymentTransaction findPendingCashPayment(Long invoiceId) {
+        return paymentRepository.findByInvoiceId(invoiceId).stream()
+                .filter(tx -> tx.getMethod() == PaymentMethod.CASH && tx.getStatus() == PaymentStatus.PENDING)
+                .findFirst()
+                .orElse(null);
     }
 
     // Helper: Tạo chữ ký HMAC SHA256 cho PayOS
@@ -283,6 +316,102 @@ public class PaymentController {
         }
     }
 
+    @PostMapping("/cash/{invoiceId}")
+    @PreAuthorize("hasAnyRole('TENANT','ADMIN')")
+    public ResponseEntity<?> requestCashPayment(@PathVariable Long invoiceId, Authentication authentication) {
+        try {
+            Invoice invoice = invoiceRepository.findById(invoiceId)
+                    .orElseThrow(() -> new RuntimeException("Khong tim thay hoa don!"));
+
+            if (!canAccessInvoice(invoice, authentication)) {
+                return ResponseEntity.status(403).body(Map.of(
+                        "success", false,
+                        "message", "Ban khong co quyen thanh toan hoa don nay"));
+            }
+
+            if (invoice.getStatus() == InvoiceStatus.PAID) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Hoa don nay da duoc thanh toan roi!"));
+            }
+
+            cancelPendingPayments(invoiceId, PaymentMethod.CASH);
+
+            PaymentTransaction tx = findPendingCashPayment(invoiceId);
+            if (tx == null) {
+                tx = PaymentTransaction.builder()
+                        .invoice(invoice)
+                        .method(PaymentMethod.CASH)
+                        .status(PaymentStatus.PENDING)
+                        .amount(invoice.getTotalAmount())
+                        .transactionCode("CASH-PENDING-" + invoiceId)
+                        .notes("Khach thue chon thanh toan tien mat, cho admin xac nhan da thu tien")
+                        .build();
+                tx = paymentRepository.save(tx);
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "paymentId", tx.getId(),
+                    "message", "Da ghi nhan yeu cau thanh toan tien mat. Vui long cho admin xac nhan."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Loi ghi nhan thanh toan tien mat: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/cash/{invoiceId}/confirm")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> confirmCashPayment(@PathVariable Long invoiceId) {
+        try {
+            Invoice invoice = invoiceRepository.findById(invoiceId)
+                    .orElseThrow(() -> new RuntimeException("Khong tim thay hoa don!"));
+
+            if (invoice.getStatus() == InvoiceStatus.PAID) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Hoa don nay da duoc thanh toan roi!"));
+            }
+
+            cancelPendingPayments(invoiceId, PaymentMethod.CASH);
+
+            PaymentTransaction tx = findPendingCashPayment(invoiceId);
+            if (tx == null) {
+                tx = PaymentTransaction.builder()
+                        .invoice(invoice)
+                        .method(PaymentMethod.CASH)
+                        .amount(invoice.getTotalAmount())
+                        .build();
+            }
+
+            tx.setStatus(PaymentStatus.COMPLETED);
+            tx.setAmount(invoice.getTotalAmount());
+            tx.setTransactionCode("CASH-" + invoiceId + "-" + System.currentTimeMillis());
+            tx.setNotes("Admin xac nhan da thu tien mat");
+            paymentRepository.save(tx);
+
+            invoice.setStatus(InvoiceStatus.PAID);
+            invoice.setPaymentDate(LocalDateTime.now());
+            invoiceRepository.save(invoice);
+
+            try {
+                emailService.sendPaymentSuccessEmail(invoice);
+            } catch (Exception e) {
+                log.error("Failed to send cash payment success email: {}", e.getMessage());
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "paymentId", tx.getId(),
+                    "message", "Da xac nhan thu tien mat va cap nhat hoa don thanh da thanh toan"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Loi xac nhan tien mat: " + e.getMessage()));
+        }
+    }
+
     @PutMapping("/{paymentId}/confirm")
     @PreAuthorize("hasAnyRole('TENANT','ADMIN')")
     public ResponseEntity<?> confirmPayment(@PathVariable Long paymentId, Authentication authentication) {
@@ -323,6 +452,12 @@ public class PaymentController {
             invoice.setPaymentDate(LocalDateTime.now());
         }
         invoiceRepository.save(invoice);
+        
+        try {
+            emailService.sendPaymentSuccessEmail(invoice);
+        } catch (Exception e) {
+            log.error("Failed to send payment success email: {}", e.getMessage());
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Xác nhận thanh toán thành công"));
     }
@@ -349,18 +484,20 @@ public class PaymentController {
             String receivedSignature = signatureObj.toString();
 
             // 2. Xác minh chữ ký HMAC (bảo mật - chặn giả mạo)
-            // PayOS sắp xếp key theo thứ tự alphabet
-            String amount = String.valueOf(data.getOrDefault("amount", ""));
-            String cancelUrl = String.valueOf(data.getOrDefault("cancelUrl", ""));
-            String description = String.valueOf(data.getOrDefault("description", ""));
+            // PayOS yêu cầu sắp xếp key theo thứ tự alphabet
             String orderCode = String.valueOf(data.getOrDefault("orderCode", ""));
-            String returnUrl = String.valueOf(data.getOrDefault("returnUrl", ""));
-
-            String dataToVerify = "amount=" + amount
-                    + "&cancelUrl=" + cancelUrl
-                    + "&description=" + description
-                    + "&orderCode=" + orderCode
-                    + "&returnUrl=" + returnUrl;
+            
+            java.util.TreeMap<String, Object> sortedData = new java.util.TreeMap<>(data);
+            StringBuilder dataToVerifyBuilder = new StringBuilder();
+            for (Map.Entry<String, Object> entry : sortedData.entrySet()) {
+                if (entry.getValue() != null && !String.valueOf(entry.getValue()).isEmpty()) {
+                    if (dataToVerifyBuilder.length() > 0) {
+                        dataToVerifyBuilder.append("&");
+                    }
+                    dataToVerifyBuilder.append(entry.getKey()).append("=").append(entry.getValue());
+                }
+            }
+            String dataToVerify = dataToVerifyBuilder.toString();
 
             String expectedSignature = hmacSHA256(dataToVerify, payOSConfig.getChecksumKey());
             if (!expectedSignature.equals(receivedSignature)) {
@@ -402,6 +539,12 @@ public class PaymentController {
                     invoice.setPaymentDate(LocalDateTime.now());
                     invoiceRepository.save(invoice);
                     log.info("[PayOS Webhook] Invoice id={} marked as PAID automatically!", invoice.getId());
+                    
+                    try {
+                        emailService.sendPaymentSuccessEmail(invoice);
+                    } catch (Exception e) {
+                        log.error("[PayOS Webhook] Failed to send payment success email: {}", e.getMessage());
+                    }
                 }
             } else {
                 log.info("[PayOS Webhook] Transaction id={} already COMPLETED, skipping", txId);

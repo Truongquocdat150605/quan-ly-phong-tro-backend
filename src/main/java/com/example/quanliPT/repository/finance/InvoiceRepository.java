@@ -29,5 +29,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     // Kiểm tra xem contract có hóa đơn chưa thanh toán không (để ngăn xóa)
     boolean existsByContractIdAndStatus(Long contractId, InvoiceStatus status);
+    boolean existsByContractIdAndBillingDateBetween(Long contractId, LocalDateTime start, LocalDateTime end);
+
+    List<Invoice> findByContractId(Long contractId);
 }
 
