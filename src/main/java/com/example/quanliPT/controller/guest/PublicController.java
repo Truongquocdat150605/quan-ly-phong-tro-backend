@@ -36,6 +36,7 @@ public class PublicController {
                 .identityNumber(request.getIdentityNumber())
                 .desiredMoveInDate(request.getDesiredMoveInDate())
                 .note(request.getNote())
+                .userId(request.getUserId())
                 .build();
 
         RentalRequest saved = rentalRequestRepository.save(rentalRequest);

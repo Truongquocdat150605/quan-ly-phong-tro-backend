@@ -45,4 +45,7 @@ public class RentalRequest {
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "user_id")
+    private Long userId;
 }

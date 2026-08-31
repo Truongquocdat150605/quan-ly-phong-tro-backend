@@ -32,6 +32,8 @@ public class ContractController {
     private final RoomRepository roomRepository;
     private final ContractBusinessService contractBusinessService;
     private final ContractNotificationService contractNotificationService;
+    private final com.example.quanliPT.repository.finance.InvoiceRepository invoiceRepository;
+    private final com.example.quanliPT.repository.finance.PaymentTransactionRepository paymentTransactionRepository;
 
 
     @GetMapping
@@ -60,6 +62,17 @@ public class ContractController {
         List<Contract> result = contractRepository.findByTenantId(user.getId());
         log.info("Returning {} contracts for current user", result.size());
         return result;
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @contractSecurity.canAccessContract(#id, authentication)")
+    public ResponseEntity<Contract> getContractById(@PathVariable Long id) {
+        log.info("Entering getContractById for contract id={}", id);
+        Contract contract = contractRepository.findById(id).orElseThrow(() -> {
+            log.error("Contract not found with id={}", id);
+            return new RuntimeException("Contract not found");
+        });
+        return ResponseEntity.ok(contract);
     }
 
     @PostMapping
@@ -110,7 +123,8 @@ public class ContractController {
                 LocalDate.parse(startDate),
                 endDate != null ? LocalDate.parse(endDate) : null,
                 rentPrice,
-                deposit
+                deposit,
+                null
         );
         log.info("Contract created with id={} via createContractWithTenant", contract.getId());
         ContractChangeNotificationDTO dto = ContractChangeNotificationDTO.builder()
@@ -183,6 +197,18 @@ public class ContractController {
             log.error("Contract not found with id={}", id);
             return new RuntimeException("Contract not found");
         });
+        
+        List<com.example.quanliPT.model.Invoice> invoices = invoiceRepository.findByContractId(id);
+        if (invoices != null && !invoices.isEmpty()) {
+            for (com.example.quanliPT.model.Invoice invoice : invoices) {
+                List<com.example.quanliPT.model.PaymentTransaction> transactions = paymentTransactionRepository.findByInvoiceId(invoice.getId());
+                if (transactions != null && !transactions.isEmpty()) {
+                    paymentTransactionRepository.deleteAll(transactions);
+                }
+            }
+            invoiceRepository.deleteAll(invoices);
+        }
+
         contractRepository.deleteById(id);
         log.info("Contract id={} deleted", id);
         ContractChangeNotificationDTO dto = ContractChangeNotificationDTO.builder()

@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface RentalRequestRepository extends JpaRepository<RentalRequest, Long> {
     List<RentalRequest> findByStatus(RentalRequestStatus status);
+    List<RentalRequest> findByPhone(String phone);
 }
 

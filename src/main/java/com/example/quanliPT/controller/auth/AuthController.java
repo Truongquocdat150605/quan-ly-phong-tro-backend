@@ -7,10 +7,14 @@ import com.example.quanliPT.dto.auth.LoginRequest;
 import com.example.quanliPT.dto.auth.RegisterRequest;
 import com.example.quanliPT.dto.auth.ResetPasswordRequest;
 import com.example.quanliPT.dto.auth.VerifyTokenRequest;
+import com.example.quanliPT.model.User;
+import com.example.quanliPT.repository.user.UserRepository;
 import com.example.quanliPT.service.auth.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import jakarta.validation.Valid;
@@ -27,6 +31,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -67,6 +72,7 @@ public class AuthController {
     }
 
     @PutMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> changePassword(
             Authentication authentication,
             @RequestBody ChangePasswordRequest request
@@ -77,6 +83,32 @@ public class AuthController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> updateCurrentUserProfile(
+            Authentication authentication,
+            @RequestBody User request
+    ) {
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setIdentityNumber(request.getIdentityNumber());
+        user.setAddress(request.getAddress());
+
+        return ResponseEntity.ok(userRepository.save(user));
     }
 }
 

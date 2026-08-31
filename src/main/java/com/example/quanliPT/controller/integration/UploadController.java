@@ -1,6 +1,7 @@
 package com.example.quanliPT.controller.integration;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,13 +14,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class UploadController {
 
-    // ✅ Đường dẫn tương đối so với thư mục chạy ứng dụng
-    private final String UPLOAD_DIR = "uploads/";
+    @Autowired
+    private Cloudinary cloudinary;
 
     @PostMapping("/upload")
     @PreAuthorize("hasRole('ADMIN')")
@@ -40,33 +45,16 @@ public class UploadController {
                 return ResponseEntity.badRequest().body(error);
             }
 
-            // Tạo tên file duy nhất bằng UUID
-            String originalFileName = StringUtils.cleanPath(
-                    file.getOriginalFilename() != null ? file.getOriginalFilename() : "file"
-            );
-            String extension = "";
-            if (originalFileName.contains(".")) {
-                extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-            }
-            String newFileName = UUID.randomUUID().toString() + extension;
+            // Upload lên Cloudinary
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+            String imageUrl = uploadResult.get("url").toString();
 
-            // Tạo thư mục uploads nếu chưa có
-            Path uploadPath = Paths.get(UPLOAD_DIR).toAbsolutePath();
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-                System.out.println("📁 [Upload] Đã tạo thư mục: " + uploadPath);
-            }
-
-            // Lưu file
-            Path filePath = uploadPath.resolve(newFileName);
-            file.transferTo(filePath.toFile());
-
-            System.out.println("✅ [Upload] File đã lưu: " + filePath);
+            System.out.println("✅ [Upload] File đã lưu lên Cloudinary: " + imageUrl);
 
             // Trả về thông tin file
             Map<String, String> response = new HashMap<>();
-            response.put("fileName", newFileName);
-            response.put("filePath", "/uploads/" + newFileName);
+            response.put("fileName", imageUrl); // Trả về url luôn
+            response.put("filePath", imageUrl);
             response.put("message", "Upload thành công");
 
             return ResponseEntity.ok(response);
