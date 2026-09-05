@@ -9,13 +9,13 @@ import java.util.List;
 
 public interface RentalRequestRepository extends JpaRepository<RentalRequest, Long> {
     @Override
-    @EntityGraph(attributePaths = {"room", "room.services"})
+    @EntityGraph(attributePaths = {"room"})
     List<RentalRequest> findAll();
 
     @EntityGraph(attributePaths = {"room"})
     List<RentalRequest> findTop5ByOrderByIdDesc();
 
-    @EntityGraph(attributePaths = {"room", "room.services"})
+    @EntityGraph(attributePaths = {"room"})
     List<RentalRequest> findByStatus(RentalRequestStatus status);
 
     List<RentalRequest> findByPhone(String phone);
