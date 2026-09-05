@@ -131,9 +131,9 @@ public class AuthService {
                 .build();
 
         passwordResetTokenRepository.save(resetToken);
+        log.info("🔑 [FORGOT PASSWORD TOKEN GENERATED] email={}, token={}", email, token);
         emailService.sendResetEmail(email, token, user.getFullName());
 
-        log.info("Password reset token created for email={}", email);
         return Map.of("message", "Mã đặt lại mật khẩu đã được gửi tới email của bạn");
     }
 
