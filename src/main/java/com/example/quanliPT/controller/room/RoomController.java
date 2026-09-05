@@ -33,6 +33,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,9 @@ public class RoomController {
     private final RoomService roomService;
     private final RentalServiceRepository rentalServiceRepository;
     private final Cloudinary cloudinary;
+
+    @Value("${cloudinary.cloud-name:}")
+    private String cloudName;
 
     @Value("${app.upload-dir:uploads}")
     private String uploadDir;
@@ -315,11 +319,43 @@ public class RoomController {
             log.warn("Invalid content type: {}", contentType);
             throw new IllegalArgumentException("Chỉ chấp nhận file ảnh");
         }
-        
-        Map uploadResult = cloudinary.uploader().upload(imageFile.getBytes(), ObjectUtils.emptyMap());
-        String imageUrl = uploadResult.get("url").toString();
-        
-        log.info("Image uploaded to Cloudinary: {}", imageUrl);
+
+        String imageUrl = null;
+
+        // 1. Thử upload lên Cloudinary nếu có cấu hình
+        if (cloudinary != null && StringUtils.hasText(cloudName)) {
+            try {
+                Map uploadResult = cloudinary.uploader().upload(imageFile.getBytes(), ObjectUtils.emptyMap());
+                if (uploadResult != null) {
+                    if (uploadResult.get("secure_url") != null) {
+                        imageUrl = uploadResult.get("secure_url").toString();
+                    } else if (uploadResult.get("url") != null) {
+                        imageUrl = uploadResult.get("url").toString().replace("http://", "https://");
+                    }
+                    if (imageUrl != null) {
+                        log.info("Image uploaded to Cloudinary (HTTPS): {}", imageUrl);
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Cloudinary upload warning: {}. Falling back to local storage.", ex.getMessage());
+            }
+        }
+
+        // 2. Fallback lưu vào thư mục local 'uploads/' trên server nếu chưa có URL Cloudinary
+        if (imageUrl == null) {
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath();
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            String originalFilename = StringUtils.cleanPath(imageFile.getOriginalFilename() != null ? imageFile.getOriginalFilename() : "image.jpg");
+            String filename = UUID.randomUUID().toString() + "_" + originalFilename;
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            imageUrl = filename;
+            log.info("Image saved to local storage: {}", filePath);
+        }
+
         return imageUrl;
     }
 

@@ -51,9 +51,15 @@ public class UploadController {
             if (cloudinary != null && StringUtils.hasText(cloudName)) {
                 try {
                     Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-                    if (uploadResult != null && uploadResult.get("url") != null) {
-                        imageUrl = uploadResult.get("url").toString();
-                        System.out.println("✅ [Upload] File đã lưu lên Cloudinary: " + imageUrl);
+                    if (uploadResult != null) {
+                        if (uploadResult.get("secure_url") != null) {
+                            imageUrl = uploadResult.get("secure_url").toString();
+                        } else if (uploadResult.get("url") != null) {
+                            imageUrl = uploadResult.get("url").toString().replace("http://", "https://");
+                        }
+                        if (imageUrl != null) {
+                            System.out.println("✅ [Upload] File đã lưu lên Cloudinary (HTTPS): " + imageUrl);
+                        }
                     }
                 } catch (Exception ex) {
                     System.err.println("⚠️ [Upload Cloudinary warning] " + ex.getMessage() + ". Chuyển sang lưu local.");
