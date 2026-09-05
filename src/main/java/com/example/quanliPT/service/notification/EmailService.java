@@ -9,6 +9,9 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -20,6 +23,7 @@ public class EmailService {
 
     @org.springframework.scheduling.annotation.Async("taskExecutor")
     public void sendResetEmail(String toEmail, String token, String fullName) {
+        log.info("📧 [EmailService] Preparing to send reset email to: {}", toEmail);
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -32,8 +36,9 @@ public class EmailService {
             helper.setText(buildResetEmailHtml(token, fullName), true);
 
             mailSender.send(message);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Không thể tạo email đặt lại mật khẩu", e);
+            log.info("✅ [EmailService] Password reset email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("❌ [EmailService Error] Failed to send reset email to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
