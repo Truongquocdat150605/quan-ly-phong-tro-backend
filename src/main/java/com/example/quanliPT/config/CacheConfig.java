@@ -18,7 +18,8 @@ public class CacheConfig {
                 "roomsAvailable",
                 "roomsById",
                 "roomsHot",
-                "roomsNewest"
+                "roomsNewest",
+                "dashboardStats"
         );
     }
 }

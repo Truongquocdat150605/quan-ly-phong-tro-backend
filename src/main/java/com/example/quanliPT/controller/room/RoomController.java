@@ -121,7 +121,7 @@ public class RoomController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest"}, allEntries = true)
+    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest", "dashboardStats"}, allEntries = true)
     public ResponseEntity<?> createRoom(
             @RequestParam("roomNumber") String roomNumber,
             @RequestParam("type") String type,
@@ -193,7 +193,7 @@ public class RoomController {
 
     @PutMapping(value = "/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest"}, allEntries = true)
+    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest", "dashboardStats"}, allEntries = true)
     public ResponseEntity<?> updateRoom(
             @PathVariable Long id,
             @RequestParam("roomNumber") String roomNumber,
@@ -254,7 +254,7 @@ public class RoomController {
 
     @PutMapping(value = "/{id}/image")
     @PreAuthorize("hasRole('ADMIN')")
-    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest"}, allEntries = true)
+    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest", "dashboardStats"}, allEntries = true)
     public ResponseEntity<?> updateRoomImage(
             @PathVariable Long id,
             @RequestParam("image") MultipartFile imageFile
@@ -285,7 +285,7 @@ public class RoomController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest"}, allEntries = true)
+    @CacheEvict(value = {"roomsAvailable", "roomsById", "roomsHot", "roomsNewest", "dashboardStats"}, allEntries = true)
     public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
         log.info("Entering deleteRoom with id={}", id);
         try {

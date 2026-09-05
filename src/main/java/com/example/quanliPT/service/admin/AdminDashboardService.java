@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
+
 @Service
 @RequiredArgsConstructor
 public class AdminDashboardService {
@@ -31,6 +33,7 @@ public class AdminDashboardService {
     private final ContractRepository contractRepository;
     private final InvoiceRepository invoiceRepository;
 
+    @Cacheable(value = "dashboardStats")
     public DashboardDTO getDashboardStats() {
         long totalUsers = userRepository.count();
         long totalRooms = roomRepository.count();
