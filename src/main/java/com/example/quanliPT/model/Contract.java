@@ -44,6 +44,7 @@ public class Contract {
     private BigDecimal deposit; // Tiền đặt cọc
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private ContractStatus status = ContractStatus.ACTIVE;
     
     @Builder.Default

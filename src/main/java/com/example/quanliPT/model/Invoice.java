@@ -66,6 +66,7 @@ public class Invoice {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private InvoiceStatus status = InvoiceStatus.UNPAID;
     
     @Column(name = "is_overdue_notified", nullable = false, columnDefinition = "boolean default false")

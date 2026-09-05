@@ -29,6 +29,7 @@ public class MaintenanceRequest {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private IssueStatus status = IssueStatus.PENDING;
 
     private LocalDateTime createdAt;

@@ -42,5 +42,6 @@ public class Room {
     private Set<RentalService> services = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private RoomStatus status = RoomStatus.AVAILABLE;
 }

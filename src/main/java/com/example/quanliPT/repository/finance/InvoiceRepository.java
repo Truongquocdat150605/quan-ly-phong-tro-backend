@@ -13,18 +13,18 @@ import java.util.List;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Override
-    @EntityGraph(attributePaths = {"contract", "contract.tenant", "contract.room"})
+    @EntityGraph(attributePaths = {"contract"})
     List<Invoice> findAll();
 
-    @EntityGraph(attributePaths = {"contract", "contract.tenant", "contract.room"})
+    @EntityGraph(attributePaths = {"contract"})
     List<Invoice> findByContractTenantId(Long tenantId);
 
     long countByStatus(InvoiceStatus status);
 
-    @EntityGraph(attributePaths = {"contract", "contract.tenant", "contract.room"})
+    @EntityGraph(attributePaths = {"contract"})
     List<Invoice> findByStatus(InvoiceStatus status);
 
-    @EntityGraph(attributePaths = {"contract", "contract.tenant", "contract.room"})
+    @EntityGraph(attributePaths = {"contract"})
     List<Invoice> findByBillingDateBetween(LocalDateTime start, LocalDateTime end);
 
     @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i WHERE i.status = :status")
@@ -36,6 +36,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     boolean existsByContractIdAndStatus(Long contractId, InvoiceStatus status);
     boolean existsByContractIdAndBillingDateBetween(Long contractId, LocalDateTime start, LocalDateTime end);
 
-    @EntityGraph(attributePaths = {"contract", "contract.tenant", "contract.room"})
+    @EntityGraph(attributePaths = {"contract"})
     List<Invoice> findByContractId(Long contractId);
 }
