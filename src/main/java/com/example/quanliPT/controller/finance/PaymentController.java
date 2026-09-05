@@ -64,6 +64,9 @@ public class PaymentController {
     @Value("${stripe.publishable.key}")
     private String stripePublishableKey;
 
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
+
     @Autowired
     private PayOSConfig payOSConfig;
 
@@ -162,8 +165,8 @@ public class PaymentController {
             // 2. Tạo Session Stripe Checkout
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl("http://localhost:3000/my-invoices?status=PAID&invoiceId=" + invoiceId + "&paymentId=" + tx.getId())
-                    .setCancelUrl("http://localhost:3000/my-invoices?status=CANCELED&invoiceId=" + invoiceId)
+                    .setSuccessUrl(frontendUrl + "/my-invoices?status=PAID&invoiceId=" + invoiceId + "&paymentId=" + tx.getId())
+                    .setCancelUrl(frontendUrl + "/my-invoices?status=CANCELED&invoiceId=" + invoiceId)
                     .addLineItem(
                             SessionCreateParams.LineItem.builder()
                                     .setQuantity(1L)
@@ -244,8 +247,8 @@ public class PaymentController {
                 desc = desc.substring(0, 25);
             }
 
-            String returnUrl = "http://localhost:3000/my-invoices?status=PAID&invoiceId=" + invoiceId + "&paymentId=" + tx.getId();
-            String cancelUrl = "http://localhost:3000/my-invoices?status=CANCELED&invoiceId=" + invoiceId;
+            String returnUrl = frontendUrl + "/my-invoices?status=PAID&invoiceId=" + invoiceId + "&paymentId=" + tx.getId();
+            String cancelUrl = frontendUrl + "/my-invoices?status=CANCELED&invoiceId=" + invoiceId;
 
             // Xây dựng body cho request PayOS
             Map<String, Object> requestBody = new HashMap<>();

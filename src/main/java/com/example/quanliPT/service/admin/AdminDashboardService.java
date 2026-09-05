@@ -9,23 +9,8 @@ import com.example.quanliPT.repository.user.*;
 import com.example.quanliPT.repository.room.*;
 import com.example.quanliPT.repository.finance.*;
 import com.example.quanliPT.repository.contract.*;
-import com.example.quanliPT.repository.notification.*;
-import com.example.quanliPT.repository.guest.*;
 
-import com.example.quanliPT.repository.auth.*;
-import com.example.quanliPT.repository.user.*;
-import com.example.quanliPT.repository.room.*;
-import com.example.quanliPT.repository.finance.*;
-import com.example.quanliPT.repository.contract.*;
-import com.example.quanliPT.repository.notification.*;
-import com.example.quanliPT.repository.guest.*;
-import com.example.quanliPT.model.*;
-import com.example.quanliPT.model.enums.ContractStatus;
-import com.example.quanliPT.model.enums.InvoiceStatus;
-import com.example.quanliPT.model.enums.RoomStatus;
- 
 import com.example.quanliPT.dto.admin.DashboardDTO;
-
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -57,17 +42,14 @@ public class AdminDashboardService {
         long unpaidInvoices = invoiceRepository.countByStatus(InvoiceStatus.UNPAID);
         long pendingContracts = contractRepository.countByStatus(ContractStatus.PENDING);
 
-        // Sum of all PAID invoices
-        BigDecimal totalRevenue = invoiceRepository.findAll().stream()
-                .filter(i -> i.getStatus() == InvoiceStatus.PAID)
-                .map(i -> i.getTotalAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Sum of all PAID invoices directly via database SQL query
+        BigDecimal totalRevenue = invoiceRepository.sumTotalAmountByStatus(InvoiceStatus.PAID);
 
         return DashboardDTO.builder()
                 .totalUsers(totalUsers)
                 .totalRooms(totalRooms)
                 .totalContracts(totalContracts)
-                .totalRevenue(totalRevenue)
+                .totalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO)
                 .availableRooms(availableRooms)
                 .occupiedRooms(occupiedRooms)
                 .unpaidInvoices(unpaidInvoices)
@@ -77,9 +59,7 @@ public class AdminDashboardService {
     }
 
     public Map<String, Object> getReportStats(LocalDateTime start, LocalDateTime end) {
-        List<Invoice> invoices = invoiceRepository.findAll().stream()
-                .filter(i -> i.getBillingDate().isAfter(start) && i.getBillingDate().isBefore(end))
-                .collect(Collectors.toList());
+        List<Invoice> invoices = invoiceRepository.findByBillingDateBetween(start, end);
 
         long totalInvoices = invoices.size();
         long paidInvoices = invoices.stream().filter(i -> i.getStatus() == InvoiceStatus.PAID).count();
@@ -100,8 +80,3 @@ public class AdminDashboardService {
         return report;
     }
 }
-
-
-
-
-

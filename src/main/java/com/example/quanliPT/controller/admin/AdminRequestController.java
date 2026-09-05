@@ -55,6 +55,11 @@ public class AdminRequestController {
         return result;
     }
 
+    @GetMapping("/rental/recent")
+    public List<RentalRequest> getRecentRentalRequests() {
+        return rentalRequestRepository.findTop5ByOrderByIdDesc();
+    }
+
     @PutMapping("/rental/{id}/status")
     public ResponseEntity<RentalRequest> updateRentalRequestStatus(
             @PathVariable Long id,

@@ -45,6 +45,12 @@ public class ContractController {
         return result;
     }
 
+    @GetMapping("/recent")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Contract> getRecentContracts() {
+        return contractRepository.findTop5ByOrderByIdDesc();
+    }
+
     @GetMapping("/my-contracts/{tenantId}")
     @PreAuthorize("@contractSecurity.canAccessTenantContracts(#tenantId, authentication)")
     public List<Contract> getMyContracts(@PathVariable Long tenantId) {
