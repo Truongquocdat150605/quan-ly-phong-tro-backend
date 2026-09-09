@@ -31,7 +31,7 @@ public class GeminiService {
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
-    @Value("${gemini.model:gemini-2.5-flash}")
+    @Value("${gemini.model:gemini-3.6-flash}")
     private String geminiModel;
 
     private static final String GEMINI_API_URL =
