@@ -74,4 +74,12 @@ public class Invoice {
     private boolean isOverdueNotified = false;
     
     private String notes;
+
+    public Double getElectricityReadingNew() {
+        return electricityEnd != null ? electricityEnd : 0.0;
+    }
+
+    public Double getWaterReadingNew() {
+        return waterEnd != null ? waterEnd : 0.0;
+    }
 }

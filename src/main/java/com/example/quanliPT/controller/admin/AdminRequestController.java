@@ -83,7 +83,7 @@ public class AdminRequestController {
     }
 
     @PostMapping("/rental/{id}/approve-and-create-contract")
-    public ResponseEntity<Contract> approveAndCreateContract(
+    public ResponseEntity<?> approveAndCreateContract(
             @PathVariable Long id,
             @RequestParam LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
@@ -108,6 +108,10 @@ public class AdminRequestController {
         if (room == null) {
             log.error("Rental request id={} has no room associated", id);
             throw new RuntimeException("Rental request has no room");
+        }
+
+        if (room.getStatus() != RoomStatus.AVAILABLE) {
+            return ResponseEntity.badRequest().body("Phòng này hiện đã có người thuê hoặc đang bảo trì!");
         }
 
         Contract savedContract = contractBusinessService.createContractAndTenant(
