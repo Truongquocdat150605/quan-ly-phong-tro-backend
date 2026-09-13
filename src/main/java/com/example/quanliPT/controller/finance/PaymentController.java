@@ -416,7 +416,7 @@ public class PaymentController {
     }
 
     @PutMapping("/{paymentId}/confirm")
-    @PreAuthorize("hasAnyRole('TENANT','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> confirmPayment(@PathVariable Long paymentId, Authentication authentication) {
         PaymentTransaction tx = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
@@ -503,11 +503,10 @@ public class PaymentController {
             String dataToVerify = dataToVerifyBuilder.toString();
 
             String expectedSignature = hmacSHA256(dataToVerify, payOSConfig.getChecksumKey());
-            // BYPASS SIGNATURE FOR DEMO: 
-            // if (!expectedSignature.equals(receivedSignature)) {
-            //     log.warn("[PayOS Webhook] Invalid signature! Expected: {}, Got: {}", expectedSignature, receivedSignature);
-            //     return ResponseEntity.status(400).body(Map.of("error", "Invalid signature"));
-            // }
+            if (!expectedSignature.equals(receivedSignature)) {
+                log.warn("[PayOS Webhook] Invalid signature! Expected: {}, Got: {}", expectedSignature, receivedSignature);
+                return ResponseEntity.status(400).body(Map.of("error", "Invalid signature"));
+            }
 
             // 3. Kiểm tra trạng thái thanh toán
             String status = String.valueOf(data.getOrDefault("status", ""));

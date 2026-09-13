@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Override
@@ -38,4 +39,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     @EntityGraph(attributePaths = {"contract"})
     List<Invoice> findByContractId(Long contractId);
+
+    Optional<Invoice> findTopByContractIdOrderByIdDesc(Long contractId);
 }

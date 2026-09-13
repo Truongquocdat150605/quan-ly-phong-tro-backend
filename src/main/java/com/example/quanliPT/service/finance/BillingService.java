@@ -105,14 +105,27 @@ public class BillingService {
                 .map(RentalService::getPrice)
                 .orElse(BigDecimal.valueOf(15000));
 
+        Double electricityStart = 0.0;
+        Double waterStart = 0.0;
+        Optional<Invoice> lastInvoiceOpt = invoiceRepository.findTopByContractIdOrderByIdDesc(contract.getId());
+        if (lastInvoiceOpt.isPresent()) {
+            Invoice lastInvoice = lastInvoiceOpt.get();
+            if (lastInvoice.getElectricityReadingNew() != null) {
+                electricityStart = lastInvoice.getElectricityReadingNew();
+            }
+            if (lastInvoice.getWaterReadingNew() != null) {
+                waterStart = lastInvoice.getWaterReadingNew();
+            }
+        }
+
         Invoice invoice = Invoice.builder()
                 .contract(contract)
                 .rentalAmount(contract.getRentPrice())
-                .electricityStart(0.0)
+                .electricityStart(electricityStart)
                 .electricityEnd(0.0)
                 .electricityPrice(electricityPrice)
                 .electricityAmount(BigDecimal.ZERO)
-                .waterStart(0.0)
+                .waterStart(waterStart)
                 .waterEnd(0.0)
                 .waterPrice(waterPrice)
                 .waterAmount(BigDecimal.ZERO)
