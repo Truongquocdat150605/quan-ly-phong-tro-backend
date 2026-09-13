@@ -1,16 +1,6 @@
 package com.example.quanliPT.service.room;
 
-import com.example.quanliPT.model.*;
-import com.example.quanliPT.repository.auth.*;
-import com.example.quanliPT.repository.user.*;
-import com.example.quanliPT.repository.room.*;
-import com.example.quanliPT.repository.finance.*;
-import com.example.quanliPT.repository.contract.*;
-import com.example.quanliPT.repository.notification.*;
-import com.example.quanliPT.repository.guest.*;
-
 import com.example.quanliPT.model.Room;
-
 import com.example.quanliPT.repository.room.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;

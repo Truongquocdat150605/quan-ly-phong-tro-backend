@@ -1,7 +1,12 @@
 package com.example.quanliPT.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +18,7 @@ import java.util.Date;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class JwtUtils {
 
     @Value("${app.jwt.secret}")
@@ -58,7 +64,7 @@ public class JwtUtils {
         try {
             return parseClaims(token).get("roles", String.class);
         } catch (Exception e) {
-            System.err.println("❌ JWT extractRole error: " + e.getMessage());
+            log.error("❌ JWT extractRole error: {}", e.getMessage());
             return null;
         }
     }
@@ -69,9 +75,9 @@ public class JwtUtils {
             parseClaims(token);
             return true;
         } catch (ExpiredJwtException e) {
-            System.err.println("⚠️ JWT expired: " + e.getMessage());
+            log.warn("⚠️ JWT expired: {}", e.getMessage());
         } catch (JwtException | IllegalArgumentException e) {
-            System.err.println("❌ JWT invalid: " + e.getMessage());
+            log.error("❌ JWT invalid: {}", e.getMessage());
         }
         return false;
     }

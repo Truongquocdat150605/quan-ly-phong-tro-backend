@@ -1,5 +1,6 @@
 package com.example.quanliPT.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -8,6 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.nio.file.Paths;
 
 @Configuration
+@Slf4j
 public class WebConfig implements WebMvcConfigurer {
 
     @Value("${app.upload-dir:uploads}")
@@ -18,6 +20,6 @@ public class WebConfig implements WebMvcConfigurer {
         String uploadPath = Paths.get(uploadDir).toAbsolutePath().toUri().toString();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadPath + "/");
-        System.out.println("[WebConfig] Serving uploads from: " + uploadPath);
+        log.info("[WebConfig] Serving uploads from: {}", uploadPath);
     }
 }

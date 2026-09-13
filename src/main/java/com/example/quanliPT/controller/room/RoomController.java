@@ -1,34 +1,26 @@
 package com.example.quanliPT.controller.room;
 
-import com.example.quanliPT.service.room.RoomService;
-
-import com.example.quanliPT.model.*;
-import com.example.quanliPT.model.enums.RoomStatus;
-import com.example.quanliPT.repository.auth.*;
-import com.example.quanliPT.repository.user.*;
-import com.example.quanliPT.repository.room.*;
-import com.example.quanliPT.repository.finance.*;
-import com.example.quanliPT.repository.contract.*;
-import com.example.quanliPT.repository.notification.*;
-import com.example.quanliPT.repository.guest.*;
-
-import com.example.quanliPT.model.Room;
-
-import com.example.quanliPT.repository.room.RoomRepository;
-import com.example.quanliPT.repository.contract.ContractRepository;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.quanliPT.model.Contract;
+import com.example.quanliPT.model.RentalService;
+import com.example.quanliPT.model.Room;
+import com.example.quanliPT.model.enums.RoomStatus;
+import com.example.quanliPT.repository.contract.ContractRepository;
+import com.example.quanliPT.repository.room.RentalServiceRepository;
+import com.example.quanliPT.repository.room.RoomRepository;
+import com.example.quanliPT.service.room.RoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,9 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 
 @RestController
 @RequestMapping("/api/rooms")

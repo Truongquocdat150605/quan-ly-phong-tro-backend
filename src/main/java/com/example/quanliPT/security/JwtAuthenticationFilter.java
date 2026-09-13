@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
@@ -64,14 +66,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                    System.out.println("✅ [JWT Filter] Authenticated: " + username + " | Authorities: " + authorities);
+                    log.debug("✅ [JWT Filter] Authenticated: {} | Authorities: {}", username, authorities);
                 }
             } else {
-                System.out.println("⚠️ [JWT Filter] Token không hợp lệ: " + request.getRequestURI());
+                log.warn("⚠️ [JWT Filter] Token không hợp lệ: {}", request.getRequestURI());
             }
 
         } catch (Exception e) {
-            System.err.println("❌ [JWT Filter error] " + e.getMessage());
+            log.error("❌ [JWT Filter error] {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

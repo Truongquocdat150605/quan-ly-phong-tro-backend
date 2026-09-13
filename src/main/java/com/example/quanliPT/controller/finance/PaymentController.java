@@ -1,46 +1,38 @@
 package com.example.quanliPT.controller.finance;
 
-import org.springframework.http.MediaType;
-
-import com.example.quanliPT.model.*;
+import com.example.quanliPT.config.PayOSConfig;
+import com.example.quanliPT.model.Invoice;
+import com.example.quanliPT.model.PaymentTransaction;
+import com.example.quanliPT.model.User;
 import com.example.quanliPT.model.enums.InvoiceStatus;
 import com.example.quanliPT.model.enums.PaymentMethod;
 import com.example.quanliPT.model.enums.PaymentStatus;
-import com.example.quanliPT.repository.auth.*;
-import com.example.quanliPT.repository.user.*;
-import com.example.quanliPT.repository.room.*;
-import com.example.quanliPT.repository.finance.*;
-import com.example.quanliPT.repository.contract.*;
-import com.example.quanliPT.repository.notification.*;
-import com.example.quanliPT.repository.guest.*;
-
-import com.example.quanliPT.repository.user.UserRepository;
-import com.example.quanliPT.model.PaymentTransaction;
-import com.example.quanliPT.model.Contract;
-
-
 import com.example.quanliPT.repository.finance.InvoiceRepository;
 import com.example.quanliPT.repository.finance.PaymentTransactionRepository;
-
-import com.example.quanliPT.config.PayOSConfig;
+import com.example.quanliPT.repository.user.UserRepository;
+import com.example.quanliPT.service.notification.EmailService;
 import com.stripe.Stripe;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-
+import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -199,7 +191,7 @@ public class PaymentController {
                     "paymentId", tx.getId()));
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Lỗi tạo thanh toán Stripe: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Lỗi tạo thanh toán Stripe: " + e.getMessage()));
@@ -312,7 +304,7 @@ public class PaymentController {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Lỗi tạo thanh toán PayOS: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Lỗi tạo thanh toán PayOS: " + e.getMessage()));

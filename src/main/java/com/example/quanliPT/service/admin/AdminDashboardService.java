@@ -1,28 +1,24 @@
 package com.example.quanliPT.service.admin;
 
-import com.example.quanliPT.model.*;
+import com.example.quanliPT.dto.admin.DashboardDTO;
+import com.example.quanliPT.model.Invoice;
 import com.example.quanliPT.model.enums.ContractStatus;
 import com.example.quanliPT.model.enums.InvoiceStatus;
 import com.example.quanliPT.model.enums.RoomStatus;
-import com.example.quanliPT.repository.auth.*;
-import com.example.quanliPT.repository.user.*;
-import com.example.quanliPT.repository.room.*;
-import com.example.quanliPT.repository.finance.*;
-import com.example.quanliPT.repository.contract.*;
-
-import com.example.quanliPT.dto.admin.DashboardDTO;
-
+import com.example.quanliPT.repository.contract.ContractRepository;
+import com.example.quanliPT.repository.finance.InvoiceRepository;
+import com.example.quanliPT.repository.room.RoomRepository;
+import com.example.quanliPT.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.cache.annotation.Cacheable;
 
 @Service
 @RequiredArgsConstructor

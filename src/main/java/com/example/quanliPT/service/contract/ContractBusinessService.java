@@ -1,30 +1,16 @@
 package com.example.quanliPT.service.contract;
 
-import com.example.quanliPT.service.finance.BillingService;
-import com.example.quanliPT.service.notification.EmailService;
-
-import com.example.quanliPT.model.*;
-import com.example.quanliPT.model.enums.RoomStatus;
-import com.example.quanliPT.repository.auth.*;
-import com.example.quanliPT.repository.user.*;
-import com.example.quanliPT.repository.room.*;
-import com.example.quanliPT.repository.finance.*;
-import com.example.quanliPT.repository.contract.*;
-import com.example.quanliPT.repository.notification.*;
-import com.example.quanliPT.repository.guest.*;
-
-import com.example.quanliPT.repository.user.UserRepository;
-import java.util.Optional;
-
 import com.example.quanliPT.model.Contract;
+import com.example.quanliPT.model.Room;
+import com.example.quanliPT.model.User;
 import com.example.quanliPT.model.enums.ContractStatus;
 import com.example.quanliPT.model.enums.Role;
-import com.example.quanliPT.model.Room;
-
-import com.example.quanliPT.model.User;
+import com.example.quanliPT.model.enums.RoomStatus;
 import com.example.quanliPT.repository.contract.ContractRepository;
 import com.example.quanliPT.repository.room.RoomRepository;
-
+import com.example.quanliPT.repository.user.UserRepository;
+import com.example.quanliPT.service.finance.BillingService;
+import com.example.quanliPT.service.notification.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
 
 @Service
 @RequiredArgsConstructor
