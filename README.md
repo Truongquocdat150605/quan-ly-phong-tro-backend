@@ -11,7 +11,7 @@ Robust RESTful API backend service for the Boarding House & Room Rental Manageme
 ---
 
 ## 🔗 Repository Navigation
-- 📦 **Frontend Repository:** [github.com/Truongquocdat150605/JAVATTTN](https://github.com/Truongquocdat150605/JAVATTTN)
+- 📦 **Frontend Repository:** [github.com/Truongquocdat150605/quan-ly-phong-tro-frontend](https://github.com/Truongquocdat150605/quan-ly-phong-tro-frontend)
 - 🚀 **Live Production Demo:** [quan-ly-phong-tro-frontend-6fx2h31g2.vercel.app](https://quan-ly-phong-tro-frontend-6fx2h31g2.vercel.app)
 
 ---
